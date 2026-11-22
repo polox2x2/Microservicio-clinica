@@ -5,7 +5,7 @@ spring:
   application:
     name: microservice-notificaciones-recordatorios
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
   datasource:
     url: jdbc:postgresql://${DB_PG_HOST:localhost}:${DB_PG_PORT:5432}/clinica_notificaciones
     username: ${DB_PG_USER:postgres}
@@ -22,7 +22,7 @@ spring:
 
 clients:
   citas:
-    url: http://localhost:8081
+    url: ${CITAS_SERVICE_URL:http://localhost:8081}
 
 security:
   jwt:
@@ -34,7 +34,7 @@ eureka:
     prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
 
 management:
   endpoints:
