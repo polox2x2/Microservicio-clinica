@@ -22,7 +22,12 @@ WORKDIR /app
 
 RUN apk add --no-cache curl tzdata && \
     cp /usr/share/zoneinfo/America/Lima /etc/localtime && \
-    echo "America/Lima" > /etc/timezone
+    echo "America/Lima" > /etc/timezone && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /workspace/app.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=builder --chown=appuser:appgroup /workspace/app.jar app.jar
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=30.0 -XX:MaxRAMPercentage=70.0 -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+
+USER appuser
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

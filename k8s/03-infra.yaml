@@ -18,10 +18,17 @@ spec:
       enableServiceLinks: false
       containers:
         - name: microservice-config
-          image: clinica/microservice-config:1.0
+          image: polox2x2/microservice-config:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8888
+          resources:
+            requests:
+              cpu: "75m"
+              memory: "160Mi"
+            limits:
+              cpu: "300m"
+              memory: "320Mi"
           startupProbe:
             httpGet:
               path: /actuator/health
@@ -78,6 +85,13 @@ spec:
         - name: wait-for-config
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "32Mi"
           command:
             - sh
             - -c
@@ -88,13 +102,20 @@ spec:
               done
       containers:
         - name: microservice-eureka
-          image: clinica/microservice-eureka:1.0
+          image: polox2x2/microservice-eureka:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761
           envFrom:
             - configMapRef:
                 name: clinica-config
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "350m"
+              memory: "384Mi"
           startupProbe:
             httpGet:
               path: /actuator/health

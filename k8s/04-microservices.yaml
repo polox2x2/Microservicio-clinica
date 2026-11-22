@@ -20,6 +20,13 @@ spec:
         - name: wait-for-dependencies
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "32Mi"
           command:
             - sh
             - -c
@@ -29,7 +36,7 @@ spec:
               until wget -q -O /dev/null http://microservice-eureka:8761/actuator/health; do echo "Esperando microservice-eureka..."; sleep 3; done
       containers:
         - name: microservice-citas
-          image: clinica/microservice-citas:1.0
+          image: polox2x2/microservice-citas:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
@@ -38,6 +45,13 @@ spec:
                 name: clinica-config
             - secretRef:
                 name: clinica-secret
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           startupProbe:
             httpGet:
               path: /actuator/health
@@ -94,6 +108,13 @@ spec:
         - name: wait-for-dependencies
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "32Mi"
           command:
             - sh
             - -c
@@ -103,7 +124,7 @@ spec:
               until wget -q -O /dev/null http://microservice-eureka:8761/actuator/health; do echo "Esperando microservice-eureka..."; sleep 3; done
       containers:
         - name: microservice-ecommerce
-          image: clinica/microservice-ecommerce:1.0
+          image: polox2x2/microservice-ecommerce:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
@@ -112,6 +133,13 @@ spec:
                 name: clinica-config
             - secretRef:
                 name: clinica-secret
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           startupProbe:
             httpGet:
               path: /actuator/health
@@ -168,6 +196,13 @@ spec:
         - name: wait-for-dependencies
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "32Mi"
           command:
             - sh
             - -c
@@ -177,7 +212,7 @@ spec:
               until wget -q -O /dev/null http://microservice-eureka:8761/actuator/health; do echo "Esperando microservice-eureka..."; sleep 3; done
       containers:
         - name: microservice-notificaciones-recordatorios
-          image: clinica/microservice-notificaciones:1.0
+          image: polox2x2/microservice-notificaciones:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8083
@@ -186,6 +221,13 @@ spec:
                 name: clinica-config
             - secretRef:
                 name: clinica-secret
+          resources:
+            requests:
+              cpu: "125m"
+              memory: "224Mi"
+            limits:
+              cpu: "400m"
+              memory: "448Mi"
           startupProbe:
             httpGet:
               path: /actuator/health

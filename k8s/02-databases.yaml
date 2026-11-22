@@ -34,6 +34,9 @@ spec:
         - name: mysql-db
           image: mysql:8.0
           imagePullPolicy: IfNotPresent
+          args:
+            - "--innodb-buffer-pool-size=128M"
+            - "--max-connections=100"
           ports:
             - containerPort: 3306
           env:
@@ -44,6 +47,13 @@ spec:
                 secretKeyRef:
                   name: clinica-secret
                   key: DB_MYSQL_PASSWORD
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           volumeMounts:
             - name: mysql-storage
               mountPath: /var/lib/mysql
@@ -135,6 +145,13 @@ spec:
                 secretKeyRef:
                   name: clinica-secret
                   key: DB_PG_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "400m"
+              memory: "384Mi"
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
