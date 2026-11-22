@@ -9,3 +9,4 @@ target
 *.log
 sql
 docker-compose.yml
+k8s
