@@ -1,0 +1,56 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: microservice-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: citas-service
+          uri: lb://microservice-citas
+          predicates:
+            - Path=/api/auth/**,/api/usuarios/**,/api/especialidades/**,/api/horarios/**,/api/citas/**
+        - id: ecommerce-service
+          uri: lb://microservice-ecommerce
+          predicates:
+            - Path=/api/ecommerce/**
+        - id: notificaciones-service
+          uri: lb://microservice-notificaciones-recordatorios
+          predicates:
+            - Path=/api/notificaciones/**
+        - id: citas-docs
+          uri: lb://microservice-citas
+          predicates:
+            - Path=/citas/v3/api-docs/**,/citas/swagger-ui/**,/citas/swagger-ui.html
+          filters:
+            - RewritePath=/citas/(?<segment>.*), /$\{segment}
+        - id: ecommerce-docs
+          uri: lb://microservice-ecommerce
+          predicates:
+            - Path=/ecommerce/v3/api-docs/**,/ecommerce/swagger-ui/**,/ecommerce/swagger-ui.html
+          filters:
+            - RewritePath=/ecommerce/(?<segment>.*), /$\{segment}
+        - id: notificaciones-docs
+          uri: lb://microservice-notificaciones-recordatorios
+          predicates:
+            - Path=/notificaciones/v3/api-docs/**,/notificaciones/swagger-ui/**,/notificaciones/swagger-ui.html
+          filters:
+            - RewritePath=/notificaciones/(?<segment>.*), /$\{segment}
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

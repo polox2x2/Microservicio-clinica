@@ -1,0 +1,41 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: microservice-ecommerce
+  datasource:
+    url: jdbc:postgresql://${DB_PG_HOST:localhost}:${DB_PG_PORT:5432}/clinica_ecommerce
+    username: ${DB_PG_USER:postgres}
+    password: ${DB_PG_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+clients:
+  citas:
+    url: http://localhost:8081
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:ClinicaMicroserviciosSecretKey2026SuperSeguraParaJwtHS256!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,25 @@
+# Excluir README.md local de GitHub
+README.md
+
+# Maven y artefactos Java
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+# IDEs y sistema operativo
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
+Thumbs.db
+
+# Variables de entorno locales
+.env
+.env.local

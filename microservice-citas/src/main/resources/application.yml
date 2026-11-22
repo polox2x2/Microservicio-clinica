@@ -1,0 +1,43 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: microservice-citas
+  config:
+    import: optional:configserver:http://localhost:8888
+  datasource:
+    url: jdbc:mysql://${DB_MYSQL_HOST:localhost}:${DB_MYSQL_PORT:3306}/clinica_citas?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+    username: ${DB_MYSQL_USER:root}
+    password: ${DB_MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+clients:
+  notificaciones:
+    url: http://localhost:8083
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:ClinicaMicroserviciosSecretKey2026SuperSeguraParaJwtHS256!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
