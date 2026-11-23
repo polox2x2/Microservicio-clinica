@@ -29,18 +29,45 @@ spring:
             - Path=/citas/v3/api-docs/**,/citas/swagger-ui/**,/citas/swagger-ui.html
           filters:
             - RewritePath=/citas/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Prefix, /citas
+        - id: citas-openapi
+          uri: lb://microservice-citas
+          predicates:
+            - Path=/v3/api-docs/citas
+          filters:
+            - RewritePath=/v3/api-docs/citas, /v3/api-docs
         - id: ecommerce-docs
           uri: lb://microservice-ecommerce
           predicates:
             - Path=/ecommerce/v3/api-docs/**,/ecommerce/swagger-ui/**,/ecommerce/swagger-ui.html
           filters:
             - RewritePath=/ecommerce/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Prefix, /ecommerce
+        - id: ecommerce-openapi
+          uri: lb://microservice-ecommerce
+          predicates:
+            - Path=/v3/api-docs/ecommerce
+          filters:
+            - RewritePath=/v3/api-docs/ecommerce, /v3/api-docs
         - id: notificaciones-docs
           uri: lb://microservice-notificaciones-recordatorios
           predicates:
             - Path=/notificaciones/v3/api-docs/**,/notificaciones/swagger-ui/**,/notificaciones/swagger-ui.html
           filters:
             - RewritePath=/notificaciones/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Prefix, /notificaciones
+        - id: notificaciones-openapi
+          uri: lb://microservice-notificaciones-recordatorios
+          predicates:
+            - Path=/v3/api-docs/notificaciones
+          filters:
+            - RewritePath=/v3/api-docs/notificaciones, /v3/api-docs
+        - id: swagger-ui-redirect
+          uri: noop://localhost
+          predicates:
+            - Path=/swagger-ui/index.html
+          filters:
+            - RedirectTo=302, /swagger-ui.html
 
 eureka:
   instance:
@@ -54,3 +81,15 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: microservice-citas
+        url: /v3/api-docs/citas
+      - name: microservice-ecommerce
+        url: /v3/api-docs/ecommerce
+      - name: microservice-notificaciones
+        url: /v3/api-docs/notificaciones
+
