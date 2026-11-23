@@ -188,6 +188,7 @@ services:
       CONFIG_SERVER_URL: http://microservice-config:8888
       EUREKA_URI: http://microservice-eureka:8761/eureka/
       CITAS_SERVICE_URL: http://microservice-citas:8081
+      NOTIFICACIONES_SERVICE_URL: http://microservice-notificaciones-recordatorios:8083
       JWT_SECRET: ${JWT_SECRET:-ClinicaMicroserviciosSecretKey2026SuperSeguraParaJwtHS256!}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
     ports:

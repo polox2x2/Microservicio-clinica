@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS especialidades (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     descripcion VARCHAR(300) NULL,
+    tarifa_base DECIMAL(10, 2) NOT NULL,
+    duracion_estandar_minutos INT NOT NULL DEFAULT 30,
     activo BIT(1) NOT NULL DEFAULT b'1',
     PRIMARY KEY (id),
     UNIQUE KEY uk_especialidades_nombre (nombre)
@@ -21,11 +23,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
     password_hash VARCHAR(120) NOT NULL,
     rol VARCHAR(20) NOT NULL,
     especialidad_id BIGINT NULL,
+    numero_colegiatura VARCHAR(30) NULL,
     activo BIT(1) NOT NULL DEFAULT b'1',
     fecha_creacion DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     UNIQUE KEY uk_usuarios_dni (dni),
     UNIQUE KEY uk_usuarios_email (email),
+    UNIQUE KEY uk_usuarios_colegiatura (numero_colegiatura),
     KEY idx_usuarios_especialidad (especialidad_id),
     CONSTRAINT fk_usuarios_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidades (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
@@ -36,6 +40,7 @@ CREATE TABLE IF NOT EXISTS horarios_doctores (
     dia_semana VARCHAR(15) NOT NULL,
     hora_inicio TIME(6) NOT NULL,
     hora_fin TIME(6) NOT NULL,
+    duracion_minutos INT NOT NULL DEFAULT 30,
     consultorio VARCHAR(50) NOT NULL,
     activo BIT(1) NOT NULL DEFAULT b'1',
     PRIMARY KEY (id),
@@ -53,7 +58,8 @@ CREATE TABLE IF NOT EXISTS citas (
     hora_fin TIME(6) NOT NULL,
     motivo VARCHAR(300) NOT NULL,
     observaciones VARCHAR(500) NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    notas_clinicas VARCHAR(1000) NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'RESERVADA',
     fecha_creacion DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     KEY idx_citas_paciente (paciente_id),
@@ -70,36 +76,48 @@ INSERT IGNORE INTO
         id,
         nombre,
         descripcion,
+        tarifa_base,
+        duracion_estandar_minutos,
         activo
     )
 VALUES (
         1,
         'Cardiología',
         'Diagnóstico y tratamiento de enfermedades cardiovasculares',
+        150.00,
+        30,
         b'1'
     ),
     (
         2,
         'Pediatría',
         'Atención médica integral para niños y adolescentes',
+        110.00,
+        30,
         b'1'
     ),
     (
         3,
         'Dermatología',
         'Cuidado, diagnóstico y tratamiento de enfermedades de la piel',
+        130.00,
+        30,
         b'1'
     ),
     (
         4,
         'Medicina General',
         'Evaluación médica primaria, preventiva y chequeos integrales',
+        80.00,
+        20,
         b'1'
     ),
     (
         5,
         'Traumatología',
         'Tratamiento de lesiones musculoesqueléticas y articulares',
+        140.00,
+        30,
         b'1'
     );
 
@@ -115,6 +133,7 @@ INSERT IGNORE INTO
         password_hash,
         rol,
         especialidad_id,
+        numero_colegiatura,
         activo,
         fecha_creacion
     )
@@ -127,6 +146,7 @@ VALUES (
         '+51999888777',
         '$2a$10$olW2kcEGksfFfPyU0N8h1Ou4/sghvCnOdixtKdXx80djS7a7NWWqi',
         'ADMIN',
+        NULL,
         NULL,
         b'1',
         NOW()
@@ -141,6 +161,7 @@ VALUES (
         '$2a$10$XDQwbMy09ysreUz7Dil5T.WO9xGEKAP09IANV6jD71c5G3y1yXQnm',
         'DOCTOR',
         1,
+        'CMP-045821',
         b'1',
         NOW()
     ),
@@ -153,6 +174,7 @@ VALUES (
         '+51912345678',
         '$2a$10$IVeCv6tQD35RUTYmY3Ebu.UlPqBYPWZgllEA/xm8XaPltm0CgCFDW',
         'PACIENTE',
+        NULL,
         NULL,
         b'1',
         NOW()
@@ -167,6 +189,7 @@ VALUES (
         '$2a$10$XDQwbMy09ysreUz7Dil5T.WO9xGEKAP09IANV6jD71c5G3y1yXQnm',
         'DOCTOR',
         2,
+        'CMP-051904',
         b'1',
         NOW()
     ),
@@ -180,6 +203,7 @@ VALUES (
         '$2a$10$XDQwbMy09ysreUz7Dil5T.WO9xGEKAP09IANV6jD71c5G3y1yXQnm',
         'DOCTOR',
         3,
+        'CMP-062310',
         b'1',
         NOW()
     ),
@@ -193,6 +217,7 @@ VALUES (
         '$2a$10$XDQwbMy09ysreUz7Dil5T.WO9xGEKAP09IANV6jD71c5G3y1yXQnm',
         'DOCTOR',
         4,
+        'CMP-073418',
         b'1',
         NOW()
     ),
@@ -205,6 +230,7 @@ VALUES (
         '+51923456789',
         '$2a$10$IVeCv6tQD35RUTYmY3Ebu.UlPqBYPWZgllEA/xm8XaPltm0CgCFDW',
         'PACIENTE',
+        NULL,
         NULL,
         b'1',
         NOW()
@@ -219,6 +245,7 @@ VALUES (
         '$2a$10$IVeCv6tQD35RUTYmY3Ebu.UlPqBYPWZgllEA/xm8XaPltm0CgCFDW',
         'PACIENTE',
         NULL,
+        NULL,
         b'1',
         NOW()
     );
@@ -231,6 +258,7 @@ INSERT IGNORE INTO
         dia_semana,
         hora_inicio,
         hora_fin,
+        duracion_minutos,
         consultorio,
         activo
     )
@@ -240,6 +268,7 @@ VALUES (
         'MONDAY',
         '08:00:00',
         '14:00:00',
+        30,
         'Consultorio 204',
         b'1'
     ),
@@ -249,6 +278,7 @@ VALUES (
         'WEDNESDAY',
         '08:00:00',
         '14:00:00',
+        30,
         'Consultorio 204',
         b'1'
     ),
@@ -258,6 +288,7 @@ VALUES (
         'FRIDAY',
         '08:00:00',
         '14:00:00',
+        30,
         'Consultorio 204',
         b'1'
     ),
@@ -267,6 +298,7 @@ VALUES (
         'TUESDAY',
         '08:00:00',
         '14:00:00',
+        30,
         'Consultorio 102',
         b'1'
     ),
@@ -276,6 +308,7 @@ VALUES (
         'THURSDAY',
         '08:00:00',
         '14:00:00',
+        30,
         'Consultorio 102',
         b'1'
     ),
@@ -285,6 +318,7 @@ VALUES (
         'MONDAY',
         '14:00:00',
         '19:00:00',
+        30,
         'Consultorio 305',
         b'1'
     ),
@@ -294,6 +328,7 @@ VALUES (
         'WEDNESDAY',
         '14:00:00',
         '19:00:00',
+        30,
         'Consultorio 305',
         b'1'
     ),
@@ -303,6 +338,7 @@ VALUES (
         'MONDAY',
         '08:00:00',
         '18:00:00',
+        20,
         'Consultorio 101',
         b'1'
     ),
@@ -312,6 +348,7 @@ VALUES (
         'TUESDAY',
         '08:00:00',
         '18:00:00',
+        20,
         'Consultorio 101',
         b'1'
     ),
@@ -321,6 +358,7 @@ VALUES (
         'FRIDAY',
         '08:00:00',
         '18:00:00',
+        20,
         'Consultorio 101',
         b'1'
     );
@@ -337,6 +375,7 @@ INSERT IGNORE INTO
         hora_fin,
         motivo,
         observaciones,
+        notas_clinicas,
         estado,
         fecha_creacion
     )
@@ -350,7 +389,8 @@ VALUES (
         '10:30:00',
         'Evaluación cardiológica preventiva',
         'Traer electrocardiograma previo',
-        'PENDIENTE',
+        NULL,
+        'RESERVADA',
         NOW()
     ),
     (
@@ -363,6 +403,7 @@ VALUES (
         '10:00:00',
         'Control de crecimiento y vacunación',
         'Traer carnet de vacunación',
+        NULL,
         'CONFIRMADA',
         NOW()
     ),
@@ -373,9 +414,10 @@ VALUES (
         3,
         '2026-11-25',
         '15:00:00',
-        '15:40:00',
+        '15:30:00',
         'Evaluación de dermatitis atópica',
         'Evitar aplicar cremas 12h antes',
+        NULL,
         'CONFIRMADA',
         NOW()
     ),
@@ -386,9 +428,10 @@ VALUES (
         4,
         '2026-11-20',
         '11:00:00',
-        '11:30:00',
+        '11:20:00',
         'Chequeo médico general anual',
         'Paciente atendida con resultados normales',
+        'Signos vitales estables; hemograma y perfil lipídico dentro de parámetros normales.',
         'ATENDIDA',
         NOW()
     ),
@@ -402,6 +445,7 @@ VALUES (
         '11:30:00',
         'Lectura de Holter 24h',
         'Reprogramada por viaje del paciente',
+        NULL,
         'CANCELADA',
         NOW()
     );
