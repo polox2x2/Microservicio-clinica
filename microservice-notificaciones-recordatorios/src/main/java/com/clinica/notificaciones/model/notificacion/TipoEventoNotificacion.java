@@ -1,9 +1,10 @@
 package com.clinica.notificaciones.model.notificacion;
 
-// Tipos de evento de notificación
 public enum TipoEventoNotificacion {
-    RECORDATORIO_CITA,
     CONFIRMACION_CITA,
+    RECORDATORIO_CITA,
+    REPROGRAMACION_CITA,
     CANCELACION_CITA,
-    ORDEN_ECOMMERCE
+    PAGO_ORDEN,
+    ALERTA_STOCK
 }

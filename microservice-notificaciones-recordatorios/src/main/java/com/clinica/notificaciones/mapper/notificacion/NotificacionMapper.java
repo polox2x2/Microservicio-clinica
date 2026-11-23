@@ -6,7 +6,7 @@ import com.clinica.notificaciones.model.notificacion.Notificacion;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
-// Mapper MapStruct para notificaciones
+//mapea entidad y dtos de notificacion
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface NotificacionMapper {
 

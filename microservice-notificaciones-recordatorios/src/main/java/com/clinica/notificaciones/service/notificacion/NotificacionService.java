@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Lógica de negocio de notificaciones
+//gestiona programacion, envio y cancelacion de notificaciones clinicas
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -43,14 +43,14 @@ public class NotificacionService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificacionResponseDto> listarPorUsuario(Long usuarioId) {
-        return notificacionRepository.findByUsuarioIdOrderByFechaCreacionDesc(usuarioId).stream()
+    public List<NotificacionResponseDto> listarPorDestinatarioId(Long destinatarioId) {
+        return notificacionRepository.findByDestinatarioIdOrderByFechaCreacionDesc(destinatarioId).stream()
                 .map(notificacionMapper::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<NotificacionResponseDto> listarPorDestinatario(String contacto) {
+    public List<NotificacionResponseDto> listarPorContacto(String contacto) {
         return notificacionRepository.findByDestinatarioContactoIgnoreCaseOrderByFechaCreacionDesc(contacto.trim())
                 .stream()
                 .map(notificacionMapper::toDto)
@@ -96,6 +96,9 @@ public class NotificacionService {
         if (notificacion.getEstado() == EstadoNotificacion.CANCELADA) {
             throw new BusinessRuleException("No se puede enviar una notificación que fue cancelada");
         }
+        if (notificacion.getEstado() == EstadoNotificacion.ENVIADA) {
+            throw new BusinessRuleException("La notificación ya fue enviada previamente");
+        }
         aplicarEnvioExitoso(notificacion, LocalDateTime.now());
         return notificacionMapper.toDto(notificacionRepository.save(notificacion));
     }
@@ -107,7 +110,7 @@ public class NotificacionService {
             throw new BusinessRuleException("No se puede marcar como fallida una notificación cancelada");
         }
         notificacion.setEstado(EstadoNotificacion.FALLIDA);
-        notificacion.setIntentos(notificacion.getIntentos() + 1);
+        notificacion.setIntentos((notificacion.getIntentos() == null ? 0 : notificacion.getIntentos()) + 1);
         notificacion.setDetalleError(detalleError);
         return notificacionMapper.toDto(notificacionRepository.save(notificacion));
     }
@@ -117,6 +120,9 @@ public class NotificacionService {
         Notificacion notificacion = obtenerEntidad(id);
         if (notificacion.getEstado() == EstadoNotificacion.ENVIADA) {
             throw new BusinessRuleException("No se puede cancelar una notificación que ya fue enviada");
+        }
+        if (notificacion.getEstado() == EstadoNotificacion.CANCELADA) {
+            throw new BusinessRuleException("La notificación ya se encuentra cancelada");
         }
         notificacion.setEstado(EstadoNotificacion.CANCELADA);
         return notificacionMapper.toDto(notificacionRepository.save(notificacion));
@@ -142,12 +148,13 @@ public class NotificacionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada con id: " + id));
     }
 
+    //completa nombre y contacto desde microservice-citas cuando faltan datos
     private void completarDatosDestinatario(NotificacionRequestDto request, Notificacion notificacion) {
         String nombre = textoONulo(request.getDestinatarioNombre());
         String contacto = textoONulo(request.getDestinatarioContacto());
 
-        if (request.getUsuarioId() != null && (nombre == null || contacto == null)) {
-            UsuarioClientDto usuario = consultarUsuarioRemoto(request.getUsuarioId());
+        if (request.getDestinatarioId() != null && (nombre == null || contacto == null)) {
+            UsuarioClientDto usuario = consultarUsuarioRemoto(request.getDestinatarioId());
             if (nombre == null) {
                 nombre = (usuario.getNombres() + " " + usuario.getApellidos()).trim();
             }
@@ -160,22 +167,22 @@ public class NotificacionService {
 
         if (nombre == null || contacto == null) {
             throw new BusinessRuleException(
-                    "Debe proporcionar destinatarioNombre y destinatarioContacto válidos (o un usuarioId con ese dato registrado)");
+                    "Debe proporcionar destinatarioNombre y destinatarioContacto válidos (o un destinatarioId con ese dato registrado)");
         }
 
         notificacion.setDestinatarioNombre(nombre);
         notificacion.setDestinatarioContacto(contacto);
     }
 
-    private UsuarioClientDto consultarUsuarioRemoto(Long usuarioId) {
+    private UsuarioClientDto consultarUsuarioRemoto(Long destinatarioId) {
         try {
-            UsuarioClientDto usuario = usuarioClient.obtenerUsuarioPorId(usuarioId);
+            UsuarioClientDto usuario = usuarioClient.obtenerUsuarioPorId(destinatarioId);
             if (usuario == null) {
-                throw new ResourceNotFoundException("Usuario no encontrado con id: " + usuarioId);
+                throw new ResourceNotFoundException("Usuario no encontrado con id: " + destinatarioId);
             }
             return usuario;
         } catch (FeignException.NotFound ex) {
-            throw new ResourceNotFoundException("Usuario no encontrado en microservice-citas con id: " + usuarioId);
+            throw new ResourceNotFoundException("Usuario no encontrado en microservice-citas con id: " + destinatarioId);
         } catch (FeignException ex) {
             throw new BusinessRuleException(
                     "No fue posible consultar al usuario en microservice-citas (código " + ex.status() + ")");

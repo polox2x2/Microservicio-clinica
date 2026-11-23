@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-// Propaga o genera JWT en Feign
 @Component
 @RequiredArgsConstructor
 public class FeignJwtInterceptor implements RequestInterceptor {

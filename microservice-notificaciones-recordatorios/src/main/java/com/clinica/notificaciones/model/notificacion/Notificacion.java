@@ -5,7 +5,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-// Entidad de notificación o recordatorio
 @Entity
 @Table(name = "notificaciones")
 @Getter
@@ -19,8 +18,8 @@ public class Notificacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "usuario_id")
-    private Long usuarioId;
+    @Column(name = "destinatario_id")
+    private Long destinatarioId;
 
     @Column(name = "destinatario_nombre", nullable = false, length = 200)
     private String destinatarioNombre;

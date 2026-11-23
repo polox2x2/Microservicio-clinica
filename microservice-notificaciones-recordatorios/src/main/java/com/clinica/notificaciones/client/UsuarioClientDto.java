@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// DTO remoto de usuario clínico
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

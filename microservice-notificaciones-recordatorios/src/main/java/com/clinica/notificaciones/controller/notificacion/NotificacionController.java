@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// Endpoints REST para notificaciones
+//expone endpoints de notificaciones y recordatorios clinicos
 @RestController
 @RequestMapping("/api/notificaciones")
 @RequiredArgsConstructor
@@ -30,14 +30,14 @@ public class NotificacionController {
         return ResponseEntity.ok(notificacionService.obtenerPorId(id));
     }
 
-    @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<NotificacionResponseDto>> listarPorUsuario(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(notificacionService.listarPorUsuario(usuarioId));
+    @GetMapping("/destinatario/{destinatarioId}")
+    public ResponseEntity<List<NotificacionResponseDto>> listarPorDestinatarioId(@PathVariable Long destinatarioId) {
+        return ResponseEntity.ok(notificacionService.listarPorDestinatarioId(destinatarioId));
     }
 
     @GetMapping("/destinatario")
-    public ResponseEntity<List<NotificacionResponseDto>> listarPorDestinatario(@RequestParam String contacto) {
-        return ResponseEntity.ok(notificacionService.listarPorDestinatario(contacto));
+    public ResponseEntity<List<NotificacionResponseDto>> listarPorContacto(@RequestParam String contacto) {
+        return ResponseEntity.ok(notificacionService.listarPorContacto(contacto));
     }
 
     @GetMapping("/pendientes")
@@ -56,7 +56,7 @@ public class NotificacionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(notificacionService.programarOEnviar(request));
     }
 
-    @PostMapping("/{id}/enviar")
+    @PatchMapping("/{id}/enviar")
     public ResponseEntity<NotificacionResponseDto> marcarComoEnviada(@PathVariable Long id) {
         return ResponseEntity.ok(notificacionService.marcarComoEnviada(id));
     }

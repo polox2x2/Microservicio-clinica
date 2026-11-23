@@ -7,10 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Repositorio JPA de notificaciones
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
 
-    List<Notificacion> findByUsuarioIdOrderByFechaCreacionDesc(Long usuarioId);
+    List<Notificacion> findByDestinatarioIdOrderByFechaCreacionDesc(Long destinatarioId);
 
     List<Notificacion> findByDestinatarioContactoIgnoreCaseOrderByFechaCreacionDesc(String destinatarioContacto);
 

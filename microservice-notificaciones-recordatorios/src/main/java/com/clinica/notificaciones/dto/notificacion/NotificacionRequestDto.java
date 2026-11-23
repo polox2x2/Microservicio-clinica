@@ -2,6 +2,7 @@ package com.clinica.notificaciones.dto.notificacion;
 
 import com.clinica.notificaciones.model.notificacion.CanalNotificacion;
 import com.clinica.notificaciones.model.notificacion.TipoEventoNotificacion;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,14 +13,14 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Datos de entrada para notificaciones
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class NotificacionRequestDto {
 
-    private Long usuarioId;
+    @JsonAlias("usuarioId")
+    private Long destinatarioId;
 
     @Size(max = 200, message = "El nombre del destinatario no debe exceder 200 caracteres")
     private String destinatarioNombre;

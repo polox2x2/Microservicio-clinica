@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Carga notificaciones y recordatorios de prueba si la base de datos está vacía
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -34,7 +33,7 @@ public class DataInitializer implements CommandLineRunner {
 
         notificacionRepository.saveAll(List.of(
                 Notificacion.builder()
-                        .usuarioId(3L)
+                        .destinatarioId(3L)
                         .destinatarioNombre("Lucía Torres Vega")
                         .destinatarioContacto("+51912345678")
                         .canal(CanalNotificacion.WHATSAPP)
@@ -47,7 +46,7 @@ public class DataInitializer implements CommandLineRunner {
                         .intentos(0)
                         .build(),
                 Notificacion.builder()
-                        .usuarioId(7L)
+                        .destinatarioId(7L)
                         .destinatarioNombre("Jorge Ramírez Quispe")
                         .destinatarioContacto("+51923456789")
                         .canal(CanalNotificacion.WHATSAPP)
@@ -61,7 +60,7 @@ public class DataInitializer implements CommandLineRunner {
                         .intentos(1)
                         .build(),
                 Notificacion.builder()
-                        .usuarioId(8L)
+                        .destinatarioId(8L)
                         .destinatarioNombre("María Fernanda Salazar")
                         .destinatarioContacto("msalazar@correo.com")
                         .canal(CanalNotificacion.EMAIL)
@@ -75,20 +74,20 @@ public class DataInitializer implements CommandLineRunner {
                         .intentos(1)
                         .build(),
                 Notificacion.builder()
-                        .usuarioId(3L)
-                        .destinatarioNombre("Lucía Torres Vega")
-                        .destinatarioContacto("ltorres@correo.com")
+                        .destinatarioId(7L)
+                        .destinatarioNombre("Jorge Ramírez Quispe")
+                        .destinatarioContacto("jramirez@correo.com")
                         .canal(CanalNotificacion.EMAIL)
-                        .tipoEvento(TipoEventoNotificacion.ORDEN_ECOMMERCE)
-                        .referenciaId(1L)
-                        .asunto("Orden de Compra Registrada ORD-2026-0001")
-                        .mensaje("Estimada Lucía, hemos recibido su orden ORD-2026-0001 por S/ 436.00. Puede proceder con el pago para despachar sus productos.")
+                        .tipoEvento(TipoEventoNotificacion.PAGO_ORDEN)
+                        .referenciaId(2L)
+                        .asunto("Pago Confirmado - Orden ORD-2026-0002")
+                        .mensaje("Estimado Jorge, confirmamos el pago de su orden ORD-2026-0002 por S/ 221.00.")
                         .estado(EstadoNotificacion.PENDIENTE)
                         .fechaProgramada(LocalDateTime.of(2026, 11, 20, 12, 0, 0))
                         .intentos(0)
                         .build(),
                 Notificacion.builder()
-                        .usuarioId(7L)
+                        .destinatarioId(7L)
                         .destinatarioNombre("Jorge Ramírez Quispe")
                         .destinatarioContacto("+51923456789")
                         .canal(CanalNotificacion.SMS)

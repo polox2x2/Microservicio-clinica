@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,7 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-// Configuración de seguridad stateless con JWT
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -33,19 +33,30 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        (request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido")))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido"))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "No cuenta con permisos suficientes")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/actuator/health",
-                                "/actuator/info"
+                                "/actuator/health"
                         ).permitAll()
-                        .requestMatchers("/api/notificaciones/**")
+                        .requestMatchers(HttpMethod.GET, "/api/notificaciones/pendientes", "/api/notificaciones/estado/**")
+                        .hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/notificaciones/destinatario/**", "/api/notificaciones/destinatario")
                         .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/notificaciones/{id}")
+                        .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/notificaciones")
+                        .hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/notificaciones")
+                        .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers("/api/notificaciones/**")
+                        .hasAnyRole("ADMIN", "DOCTOR")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

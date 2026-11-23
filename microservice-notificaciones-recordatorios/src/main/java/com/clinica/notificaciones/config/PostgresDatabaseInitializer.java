@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.regex.Pattern;
 
-// Crea la base PostgreSQL si no existe
 @Slf4j
 @Component
 public class PostgresDatabaseInitializer implements BeanFactoryPostProcessor, EnvironmentAware, Ordered {

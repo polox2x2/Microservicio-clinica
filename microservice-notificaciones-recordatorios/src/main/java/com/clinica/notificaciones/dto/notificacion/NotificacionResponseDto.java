@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Datos de salida de una notificación
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +17,7 @@ import java.time.LocalDateTime;
 public class NotificacionResponseDto {
 
     private Long id;
-    private Long usuarioId;
+    private Long destinatarioId;
     private String destinatarioNombre;
     private String destinatarioContacto;
     private CanalNotificacion canal;
