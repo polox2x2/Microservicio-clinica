@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// Lógica de negocio de especialidades
+//gestiona catalogo de especialidades medicas
 @Service
 @RequiredArgsConstructor
 public class EspecialidadService {
@@ -50,6 +50,9 @@ public class EspecialidadService {
         }
         Especialidad especialidad = especialidadMapper.toEntity(request);
         especialidad.setNombre(nombreNormalizado);
+        if (especialidad.getDuracionEstandarMinutos() == null) {
+            especialidad.setDuracionEstandarMinutos(30);
+        }
         if (especialidad.getActivo() == null) {
             especialidad.setActivo(Boolean.TRUE);
         }
@@ -69,8 +72,16 @@ public class EspecialidadService {
     }
 
     @Transactional
+    public EspecialidadResponseDto cambiarEstado(Long id, boolean activo) {
+        Especialidad especialidad = obtenerEntidad(id);
+        especialidad.setActivo(activo);
+        return especialidadMapper.toDto(especialidadRepository.save(especialidad));
+    }
+
+    @Transactional
     public void eliminar(Long id) {
         Especialidad especialidad = obtenerEntidad(id);
+        //impide eliminar especialidades asociadas a doctores existentes
         if (usuarioRepository.existsByEspecialidadId(id)) {
             throw new BusinessRuleException("No se puede eliminar la especialidad porque tiene doctores asignados");
         }

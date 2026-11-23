@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Datos de entrada para login
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

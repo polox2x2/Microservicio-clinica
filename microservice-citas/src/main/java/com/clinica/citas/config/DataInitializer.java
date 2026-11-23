@@ -17,12 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-// Carga datos iniciales de prueba si la base de datos está vacía
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -47,26 +47,36 @@ public class DataInitializer implements CommandLineRunner {
         Especialidad cardiologia = especialidadRepository.save(Especialidad.builder()
                 .nombre("Cardiología")
                 .descripcion("Diagnóstico y tratamiento de enfermedades cardiovasculares")
+                .tarifaBase(new BigDecimal("150.00"))
+                .duracionEstandarMinutos(30)
                 .activo(true)
                 .build());
         Especialidad pediatria = especialidadRepository.save(Especialidad.builder()
                 .nombre("Pediatría")
                 .descripcion("Atención médica integral para niños y adolescentes")
+                .tarifaBase(new BigDecimal("110.00"))
+                .duracionEstandarMinutos(30)
                 .activo(true)
                 .build());
         Especialidad dermatologia = especialidadRepository.save(Especialidad.builder()
                 .nombre("Dermatología")
                 .descripcion("Cuidado, diagnóstico y tratamiento de enfermedades de la piel")
+                .tarifaBase(new BigDecimal("130.00"))
+                .duracionEstandarMinutos(30)
                 .activo(true)
                 .build());
         Especialidad medicinaGeneral = especialidadRepository.save(Especialidad.builder()
                 .nombre("Medicina General")
                 .descripcion("Evaluación médica primaria, preventiva y chequeos integrales")
+                .tarifaBase(new BigDecimal("80.00"))
+                .duracionEstandarMinutos(20)
                 .activo(true)
                 .build());
         especialidadRepository.save(Especialidad.builder()
                 .nombre("Traumatología")
                 .descripcion("Tratamiento de lesiones musculoesqueléticas y articulares")
+                .tarifaBase(new BigDecimal("140.00"))
+                .duracionEstandarMinutos(30)
                 .activo(true)
                 .build());
 
@@ -90,6 +100,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("Doctor123!"))
                 .rol(RolUsuario.DOCTOR)
                 .especialidad(cardiologia)
+                .numeroColegiatura("CMP-045821")
                 .activo(true)
                 .build());
 
@@ -113,6 +124,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("Doctor123!"))
                 .rol(RolUsuario.DOCTOR)
                 .especialidad(pediatria)
+                .numeroColegiatura("CMP-051904")
                 .activo(true)
                 .build());
 
@@ -125,6 +137,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("Doctor123!"))
                 .rol(RolUsuario.DOCTOR)
                 .especialidad(dermatologia)
+                .numeroColegiatura("CMP-062310")
                 .activo(true)
                 .build());
 
@@ -137,6 +150,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode("Doctor123!"))
                 .rol(RolUsuario.DOCTOR)
                 .especialidad(medicinaGeneral)
+                .numeroColegiatura("CMP-073418")
                 .activo(true)
                 .build());
 
@@ -163,16 +177,16 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         horarioDoctorRepository.saveAll(List.of(
-                crearHorario(drMendoza, DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), "Consultorio 204"),
-                crearHorario(drMendoza, DayOfWeek.WEDNESDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), "Consultorio 204"),
-                crearHorario(drMendoza, DayOfWeek.FRIDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), "Consultorio 204"),
-                crearHorario(draVargas, DayOfWeek.TUESDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), "Consultorio 102"),
-                crearHorario(draVargas, DayOfWeek.THURSDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), "Consultorio 102"),
-                crearHorario(drParedes, DayOfWeek.MONDAY, LocalTime.of(14, 0), LocalTime.of(19, 0), "Consultorio 305"),
-                crearHorario(drParedes, DayOfWeek.WEDNESDAY, LocalTime.of(14, 0), LocalTime.of(19, 0), "Consultorio 305"),
-                crearHorario(draCastro, DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), "Consultorio 101"),
-                crearHorario(draCastro, DayOfWeek.TUESDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), "Consultorio 101"),
-                crearHorario(draCastro, DayOfWeek.FRIDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), "Consultorio 101")
+                crearHorario(drMendoza, DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), 30, "Consultorio 204"),
+                crearHorario(drMendoza, DayOfWeek.WEDNESDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), 30, "Consultorio 204"),
+                crearHorario(drMendoza, DayOfWeek.FRIDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), 30, "Consultorio 204"),
+                crearHorario(draVargas, DayOfWeek.TUESDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), 30, "Consultorio 102"),
+                crearHorario(draVargas, DayOfWeek.THURSDAY, LocalTime.of(8, 0), LocalTime.of(14, 0), 30, "Consultorio 102"),
+                crearHorario(drParedes, DayOfWeek.MONDAY, LocalTime.of(14, 0), LocalTime.of(19, 0), 30, "Consultorio 305"),
+                crearHorario(drParedes, DayOfWeek.WEDNESDAY, LocalTime.of(14, 0), LocalTime.of(19, 0), 30, "Consultorio 305"),
+                crearHorario(draCastro, DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), 20, "Consultorio 101"),
+                crearHorario(draCastro, DayOfWeek.TUESDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), 20, "Consultorio 101"),
+                crearHorario(draCastro, DayOfWeek.FRIDAY, LocalTime.of(8, 0), LocalTime.of(18, 0), 20, "Consultorio 101")
         ));
 
         citaRepository.saveAll(List.of(
@@ -185,7 +199,7 @@ public class DataInitializer implements CommandLineRunner {
                         .horaFin(LocalTime.of(10, 30))
                         .motivo("Evaluación cardiológica preventiva")
                         .observaciones("Traer electrocardiograma previo")
-                        .estado(EstadoCita.PENDIENTE)
+                        .estado(EstadoCita.RESERVADA)
                         .build(),
                 Cita.builder()
                         .paciente(pacJorge)
@@ -204,7 +218,7 @@ public class DataInitializer implements CommandLineRunner {
                         .especialidad(dermatologia)
                         .fecha(LocalDate.of(2026, 11, 25))
                         .horaInicio(LocalTime.of(15, 0))
-                        .horaFin(LocalTime.of(15, 40))
+                        .horaFin(LocalTime.of(15, 30))
                         .motivo("Evaluación de dermatitis atópica")
                         .observaciones("Evitar aplicar cremas 12h antes")
                         .estado(EstadoCita.CONFIRMADA)
@@ -215,9 +229,10 @@ public class DataInitializer implements CommandLineRunner {
                         .especialidad(medicinaGeneral)
                         .fecha(LocalDate.of(2026, 11, 20))
                         .horaInicio(LocalTime.of(11, 0))
-                        .horaFin(LocalTime.of(11, 30))
+                        .horaFin(LocalTime.of(11, 20))
                         .motivo("Chequeo médico general anual")
                         .observaciones("Paciente atendida con resultados normales")
+                        .notasClinicas("Signos vitales estables; hemograma y perfil lipídico dentro de parámetros normales.")
                         .estado(EstadoCita.ATENDIDA)
                         .build(),
                 Cita.builder()
@@ -237,12 +252,18 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private HorarioDoctor crearHorario(
-            Usuario doctor, DayOfWeek diaSemana, LocalTime horaInicio, LocalTime horaFin, String consultorio) {
+            Usuario doctor,
+            DayOfWeek diaSemana,
+            LocalTime horaInicio,
+            LocalTime horaFin,
+            int duracionMinutos,
+            String consultorio) {
         return HorarioDoctor.builder()
                 .doctor(doctor)
                 .diaSemana(diaSemana)
                 .horaInicio(horaInicio)
                 .horaFin(horaFin)
+                .duracionMinutos(duracionMinutos)
                 .consultorio(consultorio)
                 .activo(true)
                 .build();

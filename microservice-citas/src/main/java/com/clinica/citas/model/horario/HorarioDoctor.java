@@ -7,7 +7,6 @@ import lombok.*;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
-// Entidad de horario médico semanal
 @Entity
 @Table(name = "horarios_doctores")
 @Getter
@@ -35,6 +34,10 @@ public class HorarioDoctor {
     @Column(name = "hora_fin", nullable = false)
     private LocalTime horaFin;
 
+    @Builder.Default
+    @Column(name = "duracion_minutos", nullable = false)
+    private Integer duracionMinutos = 30;
+
     @Column(nullable = false, length = 50)
     private String consultorio;
 
@@ -44,6 +47,9 @@ public class HorarioDoctor {
 
     @PrePersist
     void prePersist() {
+        if (duracionMinutos == null) {
+            duracionMinutos = 30;
+        }
         if (activo == null) {
             activo = Boolean.TRUE;
         }

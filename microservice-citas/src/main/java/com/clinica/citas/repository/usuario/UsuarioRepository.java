@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-// Repositorio JPA de usuarios
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByEmailIgnoreCase(String email);
@@ -20,9 +19,15 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
+    boolean existsByNumeroColegiaturaIgnoreCase(String numeroColegiatura);
+
+    boolean existsByNumeroColegiaturaIgnoreCaseAndIdNot(String numeroColegiatura, Long id);
+
     boolean existsByEspecialidadId(Long especialidadId);
 
     List<Usuario> findByRol(RolUsuario rol);
+
+    List<Usuario> findByRolAndActivoTrue(RolUsuario rol);
 
     List<Usuario> findByRolAndEspecialidadIdAndActivoTrue(RolUsuario rol, Long especialidadId);
 }

@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-// Datos de salida de una cita
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,6 +28,7 @@ public class CitaResponseDto {
     private LocalTime horaFin;
     private String motivo;
     private String observaciones;
+    private String notasClinicas;
     private EstadoCita estado;
     private LocalDateTime fechaCreacion;
 }

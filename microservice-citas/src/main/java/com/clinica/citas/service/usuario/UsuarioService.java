@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// Lógica de negocio de usuarios
+//gestiona usuarios clinicos y reglas por rol
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
@@ -44,8 +44,11 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDto> listarDoctoresActivosPorEspecialidad(Long especialidadId) {
-        return usuarioRepository.findByRolAndEspecialidadIdAndActivoTrue(RolUsuario.DOCTOR, especialidadId).stream()
+    public List<UsuarioResponseDto> listarDoctoresActivos(Long especialidadId) {
+        List<Usuario> doctores = especialidadId != null
+                ? usuarioRepository.findByRolAndEspecialidadIdAndActivoTrue(RolUsuario.DOCTOR, especialidadId)
+                : usuarioRepository.findByRolAndActivoTrue(RolUsuario.DOCTOR);
+        return doctores.stream()
                 .map(usuarioMapper::toDto)
                 .toList();
     }
@@ -57,13 +60,20 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponseDto crear(UsuarioRequestDto request) {
-        validarUnicidad(request.getDni().trim(), request.getEmail().trim(), null);
+        String dniNormalizado = request.getDni().trim();
+        String emailNormalizado = request.getEmail().trim().toLowerCase();
+        validarUnicidad(dniNormalizado, emailNormalizado, null);
+
         Especialidad especialidad = resolverEspecialidadParaRol(request.getRol(), request.getEspecialidadId());
+        String colegiatura = resolverColegiaturaParaRol(request.getRol(), request.getNumeroColegiatura(), null);
 
         Usuario usuario = usuarioMapper.toEntity(request);
-        usuario.setDni(request.getDni().trim());
-        usuario.setEmail(request.getEmail().trim().toLowerCase());
+        usuario.setNombres(request.getNombres().trim());
+        usuario.setApellidos(request.getApellidos().trim());
+        usuario.setDni(dniNormalizado);
+        usuario.setEmail(emailNormalizado);
         usuario.setEspecialidad(especialidad);
+        usuario.setNumeroColegiatura(colegiatura);
         String rawPassword = (request.getPassword() != null && !request.getPassword().isBlank())
                 ? request.getPassword()
                 : DEFAULT_LOCAL_PASSWORD;
@@ -78,13 +88,20 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponseDto actualizar(Long id, UsuarioRequestDto request) {
         Usuario usuario = obtenerEntidad(id);
-        validarUnicidad(request.getDni().trim(), request.getEmail().trim(), id);
+        String dniNormalizado = request.getDni().trim();
+        String emailNormalizado = request.getEmail().trim().toLowerCase();
+        validarUnicidad(dniNormalizado, emailNormalizado, id);
+
         Especialidad especialidad = resolverEspecialidadParaRol(request.getRol(), request.getEspecialidadId());
+        String colegiatura = resolverColegiaturaParaRol(request.getRol(), request.getNumeroColegiatura(), id);
 
         usuarioMapper.updateEntity(request, usuario);
-        usuario.setDni(request.getDni().trim());
-        usuario.setEmail(request.getEmail().trim().toLowerCase());
+        usuario.setNombres(request.getNombres().trim());
+        usuario.setApellidos(request.getApellidos().trim());
+        usuario.setDni(dniNormalizado);
+        usuario.setEmail(emailNormalizado);
         usuario.setEspecialidad(especialidad);
+        usuario.setNumeroColegiatura(colegiatura);
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             usuario.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
@@ -97,6 +114,11 @@ public class UsuarioService {
         Usuario usuario = obtenerEntidad(id);
         usuario.setActivo(activo);
         return usuarioMapper.toDto(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public UsuarioResponseDto desactivar(Long id) {
+        return cambiarEstado(id, false);
     }
 
     public Usuario obtenerEntidad(Long id) {
@@ -133,6 +155,28 @@ public class UsuarioService {
         }
         if (especialidadId != null) {
             throw new BusinessRuleException("Solo los usuarios con rol DOCTOR pueden tener especialidad asignada");
+        }
+        return null;
+    }
+
+    //exige y valida unicidad de colegiatura unicamente para doctores
+    private String resolverColegiaturaParaRol(RolUsuario rol, String numeroColegiatura, Long idActual) {
+        boolean tieneColegiatura = numeroColegiatura != null && !numeroColegiatura.isBlank();
+        if (rol == RolUsuario.DOCTOR) {
+            if (!tieneColegiatura) {
+                throw new BusinessRuleException("Un usuario con rol DOCTOR debe tener un número de colegiatura");
+            }
+            String normalizada = numeroColegiatura.trim().toUpperCase();
+            boolean duplicada = idActual == null
+                    ? usuarioRepository.existsByNumeroColegiaturaIgnoreCase(normalizada)
+                    : usuarioRepository.existsByNumeroColegiaturaIgnoreCaseAndIdNot(normalizada, idActual);
+            if (duplicada) {
+                throw new BusinessRuleException("Ya existe un doctor registrado con la colegiatura: " + normalizada);
+            }
+            return normalizada;
+        }
+        if (tieneColegiatura) {
+            throw new BusinessRuleException("Solo los usuarios con rol DOCTOR pueden registrar número de colegiatura");
         }
         return null;
     }

@@ -21,7 +21,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-// Configuración de seguridad stateless con JWT
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -36,24 +35,42 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        (request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido")))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido"))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "No cuenta con permisos suficientes")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/actuator/health",
-                                "/actuator/info"
+                                "/actuator/health"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/especialidades/**", "/api/horarios/**")
+                        .requestMatchers(HttpMethod.GET, "/api/especialidades/**")
                         .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
-                        .requestMatchers("/api/especialidades/**", "/api/horarios/**")
+                        .requestMatchers("/api/especialidades/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/horarios/**")
+                        .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers("/api/horarios/**")
                         .hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers("/api/usuarios/**", "/api/citas/**")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/doctores", "/api/usuarios/doctores/**")
+                        .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/rol/**")
+                        .hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/{id}")
+                        .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios")
+                        .hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers("/api/usuarios/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/citas")
+                        .hasAnyRole("PACIENTE", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/citas/*/atender", "/api/citas/*/no-asistio")
+                        .hasAnyRole("DOCTOR", "ADMIN")
+                        .requestMatchers("/api/citas/**")
                         .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
                         .anyRequest().authenticated()
                 )

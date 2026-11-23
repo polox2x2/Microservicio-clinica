@@ -1,13 +1,17 @@
 package com.clinica.citas.service.horario;
 
+import com.clinica.citas.dto.horario.CupoDisponibleResponseDto;
 import com.clinica.citas.dto.horario.HorarioDoctorRequestDto;
 import com.clinica.citas.dto.horario.HorarioDoctorResponseDto;
 import com.clinica.citas.exception.BusinessRuleException;
 import com.clinica.citas.exception.ResourceNotFoundException;
 import com.clinica.citas.mapper.horario.HorarioDoctorMapper;
+import com.clinica.citas.model.cita.Cita;
+import com.clinica.citas.model.cita.EstadoCita;
 import com.clinica.citas.model.horario.HorarioDoctor;
 import com.clinica.citas.model.usuario.RolUsuario;
 import com.clinica.citas.model.usuario.Usuario;
+import com.clinica.citas.repository.cita.CitaRepository;
 import com.clinica.citas.repository.horario.HorarioDoctorRepository;
 import com.clinica.citas.service.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
-// Lógica de negocio de horarios
+//gestiona bloques horarios y calcula cupos libres reales
 @Service
 @RequiredArgsConstructor
 public class HorarioDoctorService {
 
     private final HorarioDoctorRepository horarioDoctorRepository;
+    private final CitaRepository citaRepository;
     private final UsuarioService usuarioService;
     private final HorarioDoctorMapper horarioDoctorMapper;
 
@@ -49,9 +57,55 @@ public class HorarioDoctorService {
         return horarioDoctorMapper.toDto(obtenerEntidad(id));
     }
 
+    @Transactional(readOnly = true)
+    public List<CupoDisponibleResponseDto> consultarDisponibilidad(Long doctorId, LocalDate fecha) {
+        Usuario doctor = validarDoctorActivo(doctorId);
+        List<HorarioDoctor> bloques = horarioDoctorRepository
+                .findByDoctorIdAndDiaSemanaAndActivoTrueOrderByHoraInicioAsc(doctor.getId(), fecha.getDayOfWeek());
+        if (bloques.isEmpty()) {
+            return List.of();
+        }
+
+        List<Cita> citasOcupadas = citaRepository.findByDoctorIdAndFechaAndEstadoNotOrderByHoraInicioAsc(
+                doctor.getId(), fecha, EstadoCita.CANCELADA);
+
+        //genera intervalos libres cruzando bloques activos contra citas vigentes
+        List<CupoDisponibleResponseDto> cuposDisponibles = new ArrayList<>();
+        String nombreDoctor = doctor.getNombres() + " " + doctor.getApellidos();
+
+        for (HorarioDoctor bloque : bloques) {
+            int duracion = bloque.getDuracionMinutos() != null ? bloque.getDuracionMinutos() : 30;
+            LocalTime cursor = bloque.getHoraInicio();
+            while (true) {
+                LocalTime finCupo = cursor.plusMinutes(duracion);
+                if (!finCupo.isAfter(cursor) || finCupo.isAfter(bloque.getHoraFin())) {
+                    break;
+                }
+                LocalTime inicioActual = cursor;
+                boolean ocupado = citasOcupadas.stream()
+                        .anyMatch(c -> c.getHoraInicio().isBefore(finCupo) && c.getHoraFin().isAfter(inicioActual));
+                if (!ocupado) {
+                    cuposDisponibles.add(CupoDisponibleResponseDto.builder()
+                            .horarioId(bloque.getId())
+                            .doctorId(doctor.getId())
+                            .doctorNombre(nombreDoctor)
+                            .fecha(fecha)
+                            .horaInicio(inicioActual)
+                            .horaFin(finCupo)
+                            .consultorio(bloque.getConsultorio())
+                            .duracionMinutos(duracion)
+                            .build());
+                }
+                cursor = finCupo;
+            }
+        }
+
+        return cuposDisponibles;
+    }
+
     @Transactional
     public HorarioDoctorResponseDto crear(HorarioDoctorRequestDto request) {
-        validarRangoHorario(request.getHoraInicio(), request.getHoraFin());
+        validarRangoHorario(request.getHoraInicio(), request.getHoraFin(), request.getDuracionMinutos());
         Usuario doctor = validarDoctorActivo(request.getDoctorId());
         boolean activo = request.getActivo() == null || request.getActivo();
 
@@ -71,9 +125,11 @@ public class HorarioDoctorService {
     @Transactional
     public HorarioDoctorResponseDto actualizar(Long id, HorarioDoctorRequestDto request) {
         HorarioDoctor horario = obtenerEntidad(id);
-        validarRangoHorario(request.getHoraInicio(), request.getHoraFin());
+        validarRangoHorario(request.getHoraInicio(), request.getHoraFin(), request.getDuracionMinutos());
         Usuario doctor = validarDoctorActivo(request.getDoctorId());
-        boolean activoResultante = request.getActivo() != null ? request.getActivo() : Boolean.TRUE.equals(horario.getActivo());
+        boolean activoResultante = request.getActivo() != null
+                ? request.getActivo()
+                : Boolean.TRUE.equals(horario.getActivo());
 
         if (activoResultante) {
             validarSinSolapamiento(doctor.getId(), request.getDiaSemana(),
@@ -85,6 +141,18 @@ public class HorarioDoctorService {
         horario.setConsultorio(request.getConsultorio().trim());
         horario.setActivo(activoResultante);
 
+        return horarioDoctorMapper.toDto(horarioDoctorRepository.save(horario));
+    }
+
+    @Transactional
+    public HorarioDoctorResponseDto cambiarEstado(Long id, boolean activo) {
+        HorarioDoctor horario = obtenerEntidad(id);
+        if (activo) {
+            validarDoctorActivo(horario.getDoctor().getId());
+            validarSinSolapamiento(horario.getDoctor().getId(), horario.getDiaSemana(),
+                    horario.getHoraInicio(), horario.getHoraFin(), id);
+        }
+        horario.setActivo(activo);
         return horarioDoctorMapper.toDto(horarioDoctorRepository.save(horario));
     }
 
@@ -110,9 +178,14 @@ public class HorarioDoctorService {
         return doctor;
     }
 
-    private void validarRangoHorario(LocalTime horaInicio, LocalTime horaFin) {
+    private void validarRangoHorario(LocalTime horaInicio, LocalTime horaFin, Integer duracionMinutos) {
         if (!horaFin.isAfter(horaInicio)) {
             throw new BusinessRuleException("La horaFin debe ser estrictamente posterior a la horaInicio");
+        }
+        long minutosBloque = Duration.between(horaInicio, horaFin).toMinutes();
+        if (duracionMinutos == null || minutosBloque < duracionMinutos) {
+            throw new BusinessRuleException(
+                    "El rango horario debe ser al menos igual a la duración en minutos configurada");
         }
     }
 

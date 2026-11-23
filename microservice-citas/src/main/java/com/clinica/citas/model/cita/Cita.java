@@ -9,7 +9,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-// Entidad de cita médica
 @Entity
 @Table(name = "citas")
 @Getter
@@ -50,10 +49,13 @@ public class Cita {
     @Column(length = 500)
     private String observaciones;
 
+    @Column(name = "notas_clinicas", length = 1000)
+    private String notasClinicas;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private EstadoCita estado = EstadoCita.PENDIENTE;
+    private EstadoCita estado = EstadoCita.RESERVADA;
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
@@ -61,7 +63,7 @@ public class Cita {
     @PrePersist
     void prePersist() {
         if (estado == null) {
-            estado = EstadoCita.PENDIENTE;
+            estado = EstadoCita.RESERVADA;
         }
         if (fechaCreacion == null) {
             fechaCreacion = LocalDateTime.now();

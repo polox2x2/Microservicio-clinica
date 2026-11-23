@@ -10,14 +10,42 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-// Repositorio JPA de citas médicas
 public interface CitaRepository extends JpaRepository<Cita, Long> {
 
-    List<Cita> findByPacienteId(Long pacienteId);
+    List<Cita> findAllByOrderByFechaDescHoraInicioDesc();
 
-    List<Cita> findByDoctorId(Long doctorId);
+    List<Cita> findByPacienteIdOrderByFechaDescHoraInicioDesc(Long pacienteId);
 
-    List<Cita> findByFecha(LocalDate fecha);
+    List<Cita> findByPacienteIdAndEstadoOrderByFechaDescHoraInicioDesc(Long pacienteId, EstadoCita estado);
+
+    List<Cita> findByDoctorIdOrderByFechaDescHoraInicioDesc(Long doctorId);
+
+    List<Cita> findByDoctorIdAndFechaOrderByHoraInicioAsc(Long doctorId, LocalDate fecha);
+
+    List<Cita> findByDoctorIdAndFechaAndEstadoNotOrderByHoraInicioAsc(
+            Long doctorId,
+            LocalDate fecha,
+            EstadoCita estadoExcluido
+    );
+
+    List<Cita> findByFechaOrderByHoraInicioAsc(LocalDate fecha);
+
+    @Query("""
+            SELECT c FROM Cita c
+            WHERE (:pacienteId IS NULL OR c.paciente.id = :pacienteId)
+              AND (:doctorId IS NULL OR c.doctor.id = :doctorId)
+              AND (:estado IS NULL OR c.estado = :estado)
+              AND (:fechaInicio IS NULL OR c.fecha >= :fechaInicio)
+              AND (:fechaFin IS NULL OR c.fecha <= :fechaFin)
+            ORDER BY c.fecha DESC, c.horaInicio DESC
+            """)
+    List<Cita> buscarHistorial(
+            @Param("pacienteId") Long pacienteId,
+            @Param("doctorId") Long doctorId,
+            @Param("estado") EstadoCita estado,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin
+    );
 
     @Query("""
             SELECT COUNT(c) > 0 FROM Cita c

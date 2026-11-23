@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-// Repositorio JPA de especialidades
 public interface EspecialidadRepository extends JpaRepository<Especialidad, Long> {
 
     boolean existsByNombreIgnoreCase(String nombre);

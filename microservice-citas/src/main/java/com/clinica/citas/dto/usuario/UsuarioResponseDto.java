@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Datos de salida de un usuario
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +23,7 @@ public class UsuarioResponseDto {
     private RolUsuario rol;
     private Long especialidadId;
     private String especialidadNombre;
+    private String numeroColegiatura;
     private Boolean activo;
     private LocalDateTime fechaCreacion;
 }

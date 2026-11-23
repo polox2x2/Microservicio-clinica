@@ -9,12 +9,13 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 
-// Repositorio JPA de horarios médicos
 public interface HorarioDoctorRepository extends JpaRepository<HorarioDoctor, Long> {
 
     List<HorarioDoctor> findByDoctorId(Long doctorId);
 
     List<HorarioDoctor> findByDoctorIdAndActivoTrue(Long doctorId);
+
+    List<HorarioDoctor> findByDoctorIdAndDiaSemanaAndActivoTrueOrderByHoraInicioAsc(Long doctorId, DayOfWeek diaSemana);
 
     @Query("""
             SELECT COUNT(h) > 0 FROM HorarioDoctor h

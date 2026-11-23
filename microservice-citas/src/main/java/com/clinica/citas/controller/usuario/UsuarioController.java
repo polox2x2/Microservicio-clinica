@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// Endpoints REST para usuarios clínicos
+//expone endpoints de gestion de usuarios clinicos
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
@@ -35,9 +35,15 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarPorRol(rol));
     }
 
+    @GetMapping("/doctores")
+    public ResponseEntity<List<UsuarioResponseDto>> listarDoctoresActivos(
+            @RequestParam(required = false) Long especialidadId) {
+        return ResponseEntity.ok(usuarioService.listarDoctoresActivos(especialidadId));
+    }
+
     @GetMapping("/doctores/especialidad/{especialidadId}")
     public ResponseEntity<List<UsuarioResponseDto>> listarDoctoresPorEspecialidad(@PathVariable Long especialidadId) {
-        return ResponseEntity.ok(usuarioService.listarDoctoresActivosPorEspecialidad(especialidadId));
+        return ResponseEntity.ok(usuarioService.listarDoctoresActivos(especialidadId));
     }
 
     @PostMapping
@@ -57,5 +63,10 @@ public class UsuarioController {
             @PathVariable Long id,
             @RequestParam boolean activo) {
         return ResponseEntity.ok(usuarioService.cambiarEstado(id, activo));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<UsuarioResponseDto> desactivar(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.desactivar(id));
     }
 }

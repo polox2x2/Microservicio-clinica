@@ -1,5 +1,6 @@
 package com.clinica.citas.mapper.usuario;
 
+import com.clinica.citas.dto.auth.RegistroPacienteRequest;
 import com.clinica.citas.dto.usuario.UsuarioRequestDto;
 import com.clinica.citas.dto.usuario.UsuarioResponseDto;
 import com.clinica.citas.model.usuario.Usuario;
@@ -9,7 +10,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-// Mapper MapStruct para usuarios
+//mapea entidad y dtos de usuario
 @Mapper(
         componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
@@ -19,6 +20,14 @@ public interface UsuarioMapper {
 
     @Mapping(target = "especialidad", ignore = true)
     Usuario toEntity(UsuarioRequestDto dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "especialidad", ignore = true)
+    @Mapping(target = "passwordHash", ignore = true)
+    @Mapping(target = "rol", ignore = true)
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaCreacion", ignore = true)
+    Usuario fromRegistroPaciente(RegistroPacienteRequest dto);
 
     @Mapping(target = "especialidadId", source = "especialidad.id")
     @Mapping(target = "especialidadNombre", source = "especialidad.nombre")

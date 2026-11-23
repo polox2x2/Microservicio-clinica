@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// Endpoints REST para especialidades médicas
+//expone endpoints de especialidades medicas
 @RestController
 @RequestMapping("/api/especialidades")
 @RequiredArgsConstructor
@@ -44,6 +44,13 @@ public class EspecialidadController {
             @PathVariable Long id,
             @Valid @RequestBody EspecialidadRequestDto request) {
         return ResponseEntity.ok(especialidadService.actualizar(id, request));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<EspecialidadResponseDto> cambiarEstado(
+            @PathVariable Long id,
+            @RequestParam boolean activo) {
+        return ResponseEntity.ok(especialidadService.cambiarEstado(id, activo));
     }
 
     @DeleteMapping("/{id}")

@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
-// Datos de salida de un horario
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,6 +20,7 @@ public class HorarioDoctorResponseDto {
     private DayOfWeek diaSemana;
     private LocalTime horaInicio;
     private LocalTime horaFin;
+    private Integer duracionMinutos;
     private String consultorio;
     private Boolean activo;
 }

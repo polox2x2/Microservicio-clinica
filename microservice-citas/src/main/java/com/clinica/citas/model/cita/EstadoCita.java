@@ -1,9 +1,9 @@
 package com.clinica.citas.model.cita;
 
-// Estados posibles de una cita
 public enum EstadoCita {
-    PENDIENTE,
+    RESERVADA,
     CONFIRMADA,
     ATENDIDA,
-    CANCELADA
+    CANCELADA,
+    NO_ASISTIO
 }

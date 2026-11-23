@@ -6,7 +6,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-// Entidad de usuario clínico
 @Entity
 @Table(name = "usuarios")
 @Getter
@@ -45,6 +44,9 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "especialidad_id")
     private Especialidad especialidad;
+
+    @Column(name = "numero_colegiatura", unique = true, length = 30)
+    private String numeroColegiatura;
 
     @Builder.Default
     @Column(nullable = false)

@@ -1,6 +1,5 @@
 package com.clinica.citas.dto.cita;
 
-import com.clinica.citas.model.cita.EstadoCita;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,7 +11,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-// Datos de entrada para citas médicas
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -43,6 +41,4 @@ public class CitaRequestDto {
 
     @Size(max = 500, message = "Las observaciones no deben exceder 500 caracteres")
     private String observaciones;
-
-    private EstadoCita estado;
 }

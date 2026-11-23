@@ -5,14 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// DTO para enviar notificaciones remotas
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class NotificacionClientRequestDto {
 
-    private Long usuarioId;
+    private Long destinatarioId;
     private String destinatarioNombre;
     private String destinatarioContacto;
     private String canal;

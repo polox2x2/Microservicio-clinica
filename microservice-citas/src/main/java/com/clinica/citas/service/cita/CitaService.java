@@ -2,8 +2,10 @@ package com.clinica.citas.service.cita;
 
 import com.clinica.citas.client.NotificacionClient;
 import com.clinica.citas.client.NotificacionClientRequestDto;
+import com.clinica.citas.dto.cita.AtenderCitaRequestDto;
 import com.clinica.citas.dto.cita.CitaRequestDto;
 import com.clinica.citas.dto.cita.CitaResponseDto;
+import com.clinica.citas.dto.cita.ReprogramarCitaRequestDto;
 import com.clinica.citas.exception.BusinessRuleException;
 import com.clinica.citas.exception.ResourceNotFoundException;
 import com.clinica.citas.mapper.cita.CitaMapper;
@@ -25,7 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-// Lógica de negocio de citas
+//gestiona ciclo de vida de citas medicas y notificaciones feign
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,7 +42,7 @@ public class CitaService {
 
     @Transactional(readOnly = true)
     public List<CitaResponseDto> listarTodas() {
-        return citaRepository.findAll().stream()
+        return citaRepository.findAllByOrderByFechaDescHoraInicioDesc().stream()
                 .map(citaMapper::toDto)
                 .toList();
     }
@@ -51,97 +53,153 @@ public class CitaService {
     }
 
     @Transactional(readOnly = true)
-    public List<CitaResponseDto> listarPorPaciente(Long pacienteId) {
-        return citaRepository.findByPacienteId(pacienteId).stream()
+    public List<CitaResponseDto> listarPorPaciente(Long pacienteId, EstadoCita estado) {
+        List<Cita> citas = estado != null
+                ? citaRepository.findByPacienteIdAndEstadoOrderByFechaDescHoraInicioDesc(pacienteId, estado)
+                : citaRepository.findByPacienteIdOrderByFechaDescHoraInicioDesc(pacienteId);
+        return citas.stream()
                 .map(citaMapper::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<CitaResponseDto> listarPorDoctor(Long doctorId) {
-        return citaRepository.findByDoctorId(doctorId).stream()
+    public List<CitaResponseDto> listarPorDoctor(Long doctorId, LocalDate fecha) {
+        List<Cita> citas = fecha != null
+                ? citaRepository.findByDoctorIdAndFechaOrderByHoraInicioAsc(doctorId, fecha)
+                : citaRepository.findByDoctorIdOrderByFechaDescHoraInicioDesc(doctorId);
+        return citas.stream()
                 .map(citaMapper::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<CitaResponseDto> listarPorFecha(LocalDate fecha) {
-        return citaRepository.findByFecha(fecha).stream()
+        return citaRepository.findByFechaOrderByHoraInicioAsc(fecha).stream()
+                .map(citaMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CitaResponseDto> buscarHistorial(
+            Long pacienteId,
+            Long doctorId,
+            EstadoCita estado,
+            LocalDate fechaInicio,
+            LocalDate fechaFin) {
+        return citaRepository.buscarHistorial(pacienteId, doctorId, estado, fechaInicio, fechaFin).stream()
                 .map(citaMapper::toDto)
                 .toList();
     }
 
     @Transactional
     public CitaResponseDto reservar(CitaRequestDto request) {
-        EstadoCita estado = request.getEstado() != null ? request.getEstado() : EstadoCita.PENDIENTE;
-        CitaDatosValidados datos = validarReglasCita(request, estado, null);
+        CitaDatosValidados datos = validarReglasCita(request);
 
         Cita cita = citaMapper.toEntity(request);
         cita.setPaciente(datos.paciente());
         cita.setDoctor(datos.doctor());
         cita.setEspecialidad(datos.especialidad());
         cita.setMotivo(request.getMotivo().trim());
-        cita.setEstado(estado);
+        if (request.getObservaciones() != null && !request.getObservaciones().isBlank()) {
+            cita.setObservaciones(request.getObservaciones().trim());
+        }
+        cita.setEstado(EstadoCita.RESERVADA);
 
         Cita guardada = citaRepository.save(cita);
-        if (guardada.getEstado() == EstadoCita.CANCELADA) {
-            notificarEventoCita(guardada, "CANCELACION_CITA", "Cita Médica Cancelada",
-                    construirMensajeCita(guardada, "ha sido registrada como cancelada"));
-        } else {
-            notificarEventoCita(guardada, "CONFIRMACION_CITA", "Reserva de Cita Médica",
-                    construirMensajeCita(guardada, "ha sido reservada exitosamente"));
-        }
+        notificarEventoCita(guardada, "CONFIRMACION_CITA", "Reserva de Cita Médica",
+                construirMensajeCita(guardada, "ha sido reservada exitosamente"));
         return citaMapper.toDto(guardada);
     }
 
     @Transactional
-    public CitaResponseDto actualizar(Long id, CitaRequestDto request) {
+    public CitaResponseDto reprogramar(Long id, ReprogramarCitaRequestDto request) {
         Cita cita = obtenerEntidad(id);
-        EstadoCita estado = request.getEstado() != null ? request.getEstado() : cita.getEstado();
-        CitaDatosValidados datos = validarReglasCita(request, estado, id);
+        validarTransicionPendiente(cita, "reprogramar");
+        validarRangoHoras(request.getHoraInicio(), request.getHoraFin());
 
-        citaMapper.updateEntity(request, cita);
-        cita.setPaciente(datos.paciente());
-        cita.setDoctor(datos.doctor());
-        cita.setEspecialidad(datos.especialidad());
-        cita.setMotivo(request.getMotivo().trim());
-        cita.setEstado(estado);
+        Usuario paciente = validarPacienteActivo(cita.getPaciente().getId());
+        Usuario doctor = validarDoctorActivo(cita.getDoctor().getId());
+        validarDoctorEnEspecialidad(doctor, cita.getEspecialidad());
+        validarCoberturaHorario(doctor.getId(), request.getFecha(), request.getHoraInicio(), request.getHoraFin());
+        validarDisponibilidadSinChoques(
+                doctor.getId(),
+                paciente.getId(),
+                request.getFecha(),
+                request.getHoraInicio(),
+                request.getHoraFin(),
+                id
+        );
 
-        return citaMapper.toDto(citaRepository.save(cita));
+        cita.setFecha(request.getFecha());
+        cita.setHoraInicio(request.getHoraInicio());
+        cita.setHoraFin(request.getHoraFin());
+        if (request.getMotivo() != null && !request.getMotivo().isBlank()) {
+            cita.setMotivo(request.getMotivo().trim());
+        }
+        if (request.getObservaciones() != null && !request.getObservaciones().isBlank()) {
+            cita.setObservaciones(request.getObservaciones().trim());
+        }
+        cita.setEstado(EstadoCita.RESERVADA);
+
+        Cita guardada = citaRepository.save(cita);
+        notificarEventoCita(guardada, "REPROGRAMACION_CITA", "Reprogramación de Cita Médica",
+                construirMensajeCita(guardada, "ha sido reprogramada"));
+        return citaMapper.toDto(guardada);
     }
 
     @Transactional
     public CitaResponseDto confirmar(Long id) {
-        return cambiarEstado(id, EstadoCita.CONFIRMADA);
-    }
-
-    @Transactional
-    public CitaResponseDto cambiarEstado(Long id, EstadoCita nuevoEstado) {
         Cita cita = obtenerEntidad(id);
-        if (cita.getEstado() == EstadoCita.CANCELADA && nuevoEstado != EstadoCita.CANCELADA) {
-            validarDisponibilidadSinChoques(
-                    cita.getDoctor().getId(),
-                    cita.getPaciente().getId(),
-                    cita.getFecha(),
-                    cita.getHoraInicio(),
-                    cita.getHoraFin(),
-                    id
-            );
+        if (cita.getEstado() != EstadoCita.RESERVADA) {
+            throw new BusinessRuleException("Solo se pueden confirmar citas en estado RESERVADA");
         }
-        cita.setEstado(nuevoEstado);
+        cita.setEstado(EstadoCita.CONFIRMADA);
         Cita guardada = citaRepository.save(cita);
-
-        if (nuevoEstado == EstadoCita.CONFIRMADA) {
-            notificarEventoCita(guardada, "CONFIRMACION_CITA", "Cita Médica Confirmada",
-                    construirMensajeCita(guardada, "ha sido confirmada"));
-        } else if (nuevoEstado == EstadoCita.CANCELADA) {
-            notificarEventoCita(guardada, "CANCELACION_CITA", "Cita Médica Cancelada",
-                    construirMensajeCita(guardada, "ha sido cancelada"));
-        }
-
+        notificarEventoCita(guardada, "CONFIRMACION_CITA", "Cita Médica Confirmada",
+                construirMensajeCita(guardada, "ha sido confirmada"));
         return citaMapper.toDto(guardada);
     }
 
+    @Transactional
+    public CitaResponseDto atender(Long id, AtenderCitaRequestDto request) {
+        Cita cita = obtenerEntidad(id);
+        validarTransicionPendiente(cita, "atender");
+        cita.setNotasClinicas(request.getNotasClinicas().trim());
+        if (request.getObservaciones() != null && !request.getObservaciones().isBlank()) {
+            cita.setObservaciones(request.getObservaciones().trim());
+        }
+        cita.setEstado(EstadoCita.ATENDIDA);
+        return citaMapper.toDto(citaRepository.save(cita));
+    }
+
+    @Transactional
+    public CitaResponseDto cancelar(Long id, String motivoCancelacion) {
+        Cita cita = obtenerEntidad(id);
+        validarTransicionPendiente(cita, "cancelar");
+        if (motivoCancelacion != null && !motivoCancelacion.isBlank()) {
+            String obsActual = cita.getObservaciones();
+            String motivoLimpio = motivoCancelacion.trim();
+            String nuevaObs = (obsActual != null && !obsActual.isBlank())
+                    ? obsActual + " | Cancelación: " + motivoLimpio
+                    : "Cancelación: " + motivoLimpio;
+            cita.setObservaciones(nuevaObs.length() > 500 ? nuevaObs.substring(0, 500) : nuevaObs);
+        }
+        cita.setEstado(EstadoCita.CANCELADA);
+        Cita guardada = citaRepository.save(cita);
+        notificarEventoCita(guardada, "CANCELACION_CITA", "Cita Médica Cancelada",
+                construirMensajeCita(guardada, "ha sido cancelada"));
+        return citaMapper.toDto(guardada);
+    }
+
+    @Transactional
+    public CitaResponseDto marcarNoAsistio(Long id) {
+        Cita cita = obtenerEntidad(id);
+        validarTransicionPendiente(cita, "marcar como NO_ASISTIO");
+        cita.setEstado(EstadoCita.NO_ASISTIO);
+        return citaMapper.toDto(citaRepository.save(cita));
+    }
+
+    //envia notificacion tolerante a fallos para no revertir la transaccion de la cita
     private void notificarEventoCita(Cita cita, String tipoEvento, String asunto, String mensaje) {
         try {
             Usuario paciente = cita.getPaciente();
@@ -150,7 +208,7 @@ public class CitaService {
             String contacto = tieneTelefono ? paciente.getTelefono() : paciente.getEmail();
 
             NotificacionClientRequestDto payload = NotificacionClientRequestDto.builder()
-                    .usuarioId(paciente.getId())
+                    .destinatarioId(paciente.getId())
                     .destinatarioNombre(paciente.getNombres() + " " + paciente.getApellidos())
                     .destinatarioContacto(contacto)
                     .canal(canal)
@@ -185,54 +243,77 @@ public class CitaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cita no encontrada con id: " + id));
     }
 
-    private CitaDatosValidados validarReglasCita(CitaRequestDto request, EstadoCita estado, Long excludeId) {
-        if (!request.getHoraFin().isAfter(request.getHoraInicio())) {
-            throw new BusinessRuleException("La horaFin de la cita debe ser posterior a la horaInicio");
-        }
-
-        Usuario paciente = usuarioService.obtenerEntidad(request.getPacienteId());
-        if (paciente.getRol() != RolUsuario.PACIENTE || !Boolean.TRUE.equals(paciente.getActivo())) {
-            throw new BusinessRuleException("El usuario paciente debe tener rol PACIENTE y estar activo");
-        }
-
-        Usuario doctor = usuarioService.obtenerEntidad(request.getDoctorId());
-        if (doctor.getRol() != RolUsuario.DOCTOR || !Boolean.TRUE.equals(doctor.getActivo())) {
-            throw new BusinessRuleException("El usuario doctor debe tener rol DOCTOR y estar activo");
-        }
+    private CitaDatosValidados validarReglasCita(CitaRequestDto request) {
+        validarRangoHoras(request.getHoraInicio(), request.getHoraFin());
+        Usuario paciente = validarPacienteActivo(request.getPacienteId());
+        Usuario doctor = validarDoctorActivo(request.getDoctorId());
 
         Especialidad especialidad = especialidadService.obtenerEntidad(request.getEspecialidadId());
         if (!Boolean.TRUE.equals(especialidad.getActivo())) {
             throw new BusinessRuleException("La especialidad seleccionada no se encuentra activa");
         }
 
+        validarDoctorEnEspecialidad(doctor, especialidad);
+        validarCoberturaHorario(doctor.getId(), request.getFecha(), request.getHoraInicio(), request.getHoraFin());
+        validarDisponibilidadSinChoques(
+                doctor.getId(),
+                paciente.getId(),
+                request.getFecha(),
+                request.getHoraInicio(),
+                request.getHoraFin(),
+                null
+        );
+
+        return new CitaDatosValidados(paciente, doctor, especialidad);
+    }
+
+    private void validarRangoHoras(LocalTime horaInicio, LocalTime horaFin) {
+        if (!horaFin.isAfter(horaInicio)) {
+            throw new BusinessRuleException("La horaFin de la cita debe ser posterior a la horaInicio");
+        }
+    }
+
+    private Usuario validarPacienteActivo(Long pacienteId) {
+        Usuario paciente = usuarioService.obtenerEntidad(pacienteId);
+        if (paciente.getRol() != RolUsuario.PACIENTE || !Boolean.TRUE.equals(paciente.getActivo())) {
+            throw new BusinessRuleException("El usuario paciente debe tener rol PACIENTE y estar activo");
+        }
+        return paciente;
+    }
+
+    private Usuario validarDoctorActivo(Long doctorId) {
+        Usuario doctor = usuarioService.obtenerEntidad(doctorId);
+        if (doctor.getRol() != RolUsuario.DOCTOR || !Boolean.TRUE.equals(doctor.getActivo())) {
+            throw new BusinessRuleException("El usuario doctor debe tener rol DOCTOR y estar activo");
+        }
+        return doctor;
+    }
+
+    private void validarDoctorEnEspecialidad(Usuario doctor, Especialidad especialidad) {
         if (doctor.getEspecialidad() == null || !doctor.getEspecialidad().getId().equals(especialidad.getId())) {
             throw new BusinessRuleException("El doctor seleccionado no pertenece a la especialidad indicada");
         }
+    }
 
-        if (estado != EstadoCita.CANCELADA) {
-            boolean cubiertoPorHorario = horarioDoctorRepository.existeHorarioDisponible(
-                    doctor.getId(),
-                    request.getFecha().getDayOfWeek(),
-                    request.getHoraInicio(),
-                    request.getHoraFin()
-            );
-            if (!cubiertoPorHorario) {
-                throw new BusinessRuleException(
-                        "El doctor no cuenta con un horario activo que cubra el rango solicitado en "
-                                + request.getFecha().getDayOfWeek());
-            }
-
-            validarDisponibilidadSinChoques(
-                    doctor.getId(),
-                    paciente.getId(),
-                    request.getFecha(),
-                    request.getHoraInicio(),
-                    request.getHoraFin(),
-                    excludeId
-            );
+    private void validarCoberturaHorario(Long doctorId, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin) {
+        boolean cubiertoPorHorario = horarioDoctorRepository.existeHorarioDisponible(
+                doctorId,
+                fecha.getDayOfWeek(),
+                horaInicio,
+                horaFin
+        );
+        if (!cubiertoPorHorario) {
+            throw new BusinessRuleException(
+                    "El doctor no cuenta con un horario activo que cubra el rango solicitado en "
+                            + fecha.getDayOfWeek());
         }
+    }
 
-        return new CitaDatosValidados(paciente, doctor, especialidad);
+    private void validarTransicionPendiente(Cita cita, String operacion) {
+        if (cita.getEstado() != EstadoCita.RESERVADA && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new BusinessRuleException(
+                    "No se puede " + operacion + " una cita en estado " + cita.getEstado());
+        }
     }
 
     private void validarDisponibilidadSinChoques(

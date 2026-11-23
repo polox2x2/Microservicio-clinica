@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
-// Emite y valida tokens JWT
 @Service
 public class JwtService {
 

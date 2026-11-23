@@ -10,7 +10,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Datos de entrada para usuarios clínicos
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -44,6 +43,9 @@ public class UsuarioRequestDto {
     private RolUsuario rol;
 
     private Long especialidadId;
+
+    @Size(max = 30, message = "El número de colegiatura no debe exceder 30 caracteres")
+    private String numeroColegiatura;
 
     private Boolean activo;
 }
