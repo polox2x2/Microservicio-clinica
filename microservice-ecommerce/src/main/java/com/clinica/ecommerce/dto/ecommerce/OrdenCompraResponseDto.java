@@ -10,7 +10,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Datos de salida de una orden
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,9 +18,10 @@ public class OrdenCompraResponseDto {
 
     private Long id;
     private String codigoOrden;
-    private Long usuarioId;
+    private Long clienteId;
     private String nombreCliente;
     private String emailCliente;
+    private String telefonoCliente;
     private BigDecimal total;
     private EstadoOrden estado;
     private LocalDateTime fechaCreacion;

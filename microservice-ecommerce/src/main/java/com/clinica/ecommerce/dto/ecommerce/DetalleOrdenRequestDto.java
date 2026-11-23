@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Datos de entrada para ítem de orden
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

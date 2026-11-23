@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-// Datos de entrada para productos clínicos
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,6 +36,9 @@ public class ProductoClinicoRequestDto {
     @NotNull(message = "El stock es obligatorio")
     @Min(value = 0, message = "El stock no puede ser negativo")
     private Integer stock;
+
+    @Min(value = 0, message = "El stock mínimo no puede ser negativo")
+    private Integer stockMinimo;
 
     private Boolean requiereReceta;
 

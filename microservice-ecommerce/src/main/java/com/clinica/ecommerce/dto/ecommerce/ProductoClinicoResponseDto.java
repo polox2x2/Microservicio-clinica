@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Datos de salida de un producto
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +21,7 @@ public class ProductoClinicoResponseDto {
     private String categoria;
     private BigDecimal precio;
     private Integer stock;
+    private Integer stockMinimo;
     private Boolean requiereReceta;
     private Boolean activo;
     private LocalDateTime fechaCreacion;

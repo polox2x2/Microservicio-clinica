@@ -6,7 +6,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Entidad de producto clínico
 @Entity
 @Table(name = "productos_clinicos")
 @Getter
@@ -39,6 +38,10 @@ public class ProductoClinico {
     private Integer stock;
 
     @Builder.Default
+    @Column(name = "stock_minimo", nullable = false)
+    private Integer stockMinimo = 5;
+
+    @Builder.Default
     @Column(name = "requiere_receta", nullable = false)
     private Boolean requiereReceta = Boolean.FALSE;
 
@@ -51,6 +54,9 @@ public class ProductoClinico {
 
     @PrePersist
     void prePersist() {
+        if (stockMinimo == null) {
+            stockMinimo = 5;
+        }
         if (requiereReceta == null) {
             requiereReceta = Boolean.FALSE;
         }

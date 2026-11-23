@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-// Configuración Swagger con esquema Bearer JWT
 @Configuration
 public class OpenApiConfig {
 

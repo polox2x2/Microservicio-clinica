@@ -1,5 +1,6 @@
 server:
   port: 8082
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -23,6 +24,8 @@ spring:
 clients:
   citas:
     url: ${CITAS_SERVICE_URL:http://localhost:8081}
+  notificaciones:
+    url: ${NOTIFICACIONES_SERVICE_URL:http://localhost:8083}
 
 security:
   jwt:

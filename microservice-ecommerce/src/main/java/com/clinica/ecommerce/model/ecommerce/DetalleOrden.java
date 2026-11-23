@@ -5,7 +5,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-// Entidad de detalle de orden
 @Entity
 @Table(name = "detalles_orden")
 @Getter

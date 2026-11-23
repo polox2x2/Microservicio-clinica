@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
-// Carga productos clínicos y órdenes de prueba si la base de datos está vacía
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -41,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Equipos Médicos")
                 .precio(new BigDecimal("185.50"))
                 .stock(25)
+                .stockMinimo(5)
                 .requiereReceta(false)
                 .activo(true)
                 .build());
@@ -52,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Equipos Médicos")
                 .precio(new BigDecimal("65.00"))
                 .stock(40)
+                .stockMinimo(8)
                 .requiereReceta(false)
                 .activo(true)
                 .build());
@@ -63,6 +64,7 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Diagnóstico")
                 .precio(new BigDecimal("145.00"))
                 .stock(18)
+                .stockMinimo(5)
                 .requiereReceta(false)
                 .activo(true)
                 .build());
@@ -74,6 +76,7 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Farmacia Cardiovascular")
                 .precio(new BigDecimal("38.00"))
                 .stock(60)
+                .stockMinimo(10)
                 .requiereReceta(true)
                 .activo(true)
                 .build());
@@ -85,6 +88,7 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Dermocosmética")
                 .precio(new BigDecimal("92.00"))
                 .stock(30)
+                .stockMinimo(6)
                 .requiereReceta(false)
                 .activo(true)
                 .build());
@@ -96,15 +100,29 @@ public class DataInitializer implements CommandLineRunner {
                 .categoria("Insumos Médicos")
                 .precio(new BigDecimal("110.00"))
                 .stock(15)
+                .stockMinimo(5)
+                .requiereReceta(false)
+                .activo(true)
+                .build());
+
+        productoClinicoRepository.save(ProductoClinico.builder()
+                .sku("PAQ-CHK-007")
+                .nombre("Paquete Chequeo Preventivo Integral")
+                .descripcion("Incluye hemograma completo, perfil lipídico, glucosa basal y consulta médica preventiva")
+                .categoria("Paquetes Clínicos")
+                .precio(new BigDecimal("290.00"))
+                .stock(3)
+                .stockMinimo(5)
                 .requiereReceta(false)
                 .activo(true)
                 .build());
 
         OrdenCompra orden1 = OrdenCompra.builder()
                 .codigoOrden("ORD-2026-0001")
-                .usuarioId(3L)
+                .clienteId(3L)
                 .nombreCliente("Lucía Torres Vega")
                 .emailCliente("ltorres@correo.com")
+                .telefonoCliente("+51912345678")
                 .estado(EstadoOrden.PENDIENTE)
                 .total(new BigDecimal("436.00"))
                 .build();
@@ -113,9 +131,10 @@ public class DataInitializer implements CommandLineRunner {
 
         OrdenCompra orden2 = OrdenCompra.builder()
                 .codigoOrden("ORD-2026-0002")
-                .usuarioId(7L)
+                .clienteId(7L)
                 .nombreCliente("Jorge Ramírez Quispe")
                 .emailCliente("jramirez@correo.com")
+                .telefonoCliente("+51923456789")
                 .estado(EstadoOrden.PAGADA)
                 .total(new BigDecimal("221.00"))
                 .build();
@@ -124,9 +143,10 @@ public class DataInitializer implements CommandLineRunner {
 
         OrdenCompra orden3 = OrdenCompra.builder()
                 .codigoOrden("ORD-2026-0003")
-                .usuarioId(8L)
+                .clienteId(8L)
                 .nombreCliente("María Fernanda Salazar")
                 .emailCliente("msalazar@correo.com")
+                .telefonoCliente("+51934567890")
                 .estado(EstadoOrden.ENTREGADA)
                 .total(new BigDecimal("202.00"))
                 .build();
@@ -135,7 +155,7 @@ public class DataInitializer implements CommandLineRunner {
 
         ordenCompraRepository.saveAll(List.of(orden1, orden2, orden3));
 
-        log.info("Datos iniciales cargados en clinica_ecommerce: 6 productos clínicos y 3 órdenes de compra.");
+        log.info("Datos iniciales cargados en clinica_ecommerce: 7 productos clínicos y 3 órdenes de compra.");
     }
 
     private DetalleOrden crearDetalle(ProductoClinico producto, int cantidad) {

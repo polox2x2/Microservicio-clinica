@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// Entidad de orden de compra
 @Entity
 @Table(name = "ordenes_compra")
 @Getter
@@ -25,14 +24,17 @@ public class OrdenCompra {
     @Column(name = "codigo_orden", nullable = false, unique = true, length = 30)
     private String codigoOrden;
 
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    @Column(name = "cliente_id", nullable = false)
+    private Long clienteId;
 
     @Column(name = "nombre_cliente", nullable = false, length = 200)
     private String nombreCliente;
 
     @Column(name = "email_cliente", nullable = false, length = 120)
     private String emailCliente;
+
+    @Column(name = "telefono_cliente", length = 20)
+    private String telefonoCliente;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;

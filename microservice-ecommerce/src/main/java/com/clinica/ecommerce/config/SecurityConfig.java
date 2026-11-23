@@ -19,7 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-// Configuración de seguridad stateless con JWT
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -34,21 +33,32 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        (request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido")))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ausente o inválido"))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "No cuenta con permisos suficientes")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/actuator/health",
-                                "/actuator/info"
+                                "/actuator/health"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ecommerce/productos/stock-bajo")
+                        .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/ecommerce/productos/**")
                         .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
                         .requestMatchers("/api/ecommerce/productos/**")
-                        .hasAnyRole("ADMIN", "DOCTOR")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/ecommerce/ordenes")
+                        .hasAnyRole("PACIENTE", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/ecommerce/ordenes/*/pagar",
+                                "/api/ecommerce/ordenes/*/anular")
+                        .hasAnyRole("PACIENTE", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/ecommerce/ordenes/*/entregar")
+                        .hasRole("ADMIN")
                         .requestMatchers("/api/ecommerce/ordenes/**")
                         .hasAnyRole("PACIENTE", "DOCTOR", "ADMIN")
                         .anyRequest().authenticated()

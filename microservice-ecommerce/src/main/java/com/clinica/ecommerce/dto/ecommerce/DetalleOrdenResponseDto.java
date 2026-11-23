@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-// Datos de salida de ítem de orden
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
